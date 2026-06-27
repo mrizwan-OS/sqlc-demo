@@ -1,4 +1,3 @@
--- PostgreSQL queries with $1, $2 placeholders
 -- name: CreateUser :exec
 INSERT INTO users (name, email) VALUES ($1, $2);
 
@@ -35,19 +34,6 @@ ORDER BY created_at DESC;
 
 -- name: DeleteComment :exec
 DELETE FROM comments WHERE id = $1;
-
--- name: GetUserWithPosts :many
-SELECT u.*, p.* FROM users u
-LEFT JOIN posts p ON u.id = p.user_id
-WHERE u.id = $1;
-
--- name: GetRecentUsers :many
-SELECT * FROM users 
-WHERE created_at > NOW() - INTERVAL '7 days'
-ORDER BY created_at DESC;
-
--- name: UpdateUserStatus :exec
-UPDATE users SET status = $1 WHERE id = $2;
 
 -- name: GetUserWithPosts :many
 SELECT u.*, p.* FROM users u

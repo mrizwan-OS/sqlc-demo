@@ -36,7 +36,6 @@ type CreateUserParams struct {
 	Email string `json:"email"`
 }
 
-// PostgreSQL queries with $1, $2 placeholders
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.Exec(ctx, createUser, arg.Name, arg.Email)
 	return err
@@ -301,19 +300,5 @@ type UpdateUserEmailParams struct {
 
 func (q *Queries) UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error {
 	_, err := q.db.Exec(ctx, updateUserEmail, arg.Email, arg.ID)
-	return err
-}
-
-const updateUserStatus = `-- name: UpdateUserStatus :exec
-UPDATE users SET status = $1 WHERE id = $2
-`
-
-type UpdateUserStatusParams struct {
-	Status *string `json:"status"`
-	ID     int32   `json:"id"`
-}
-
-func (q *Queries) UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error {
-	_, err := q.db.Exec(ctx, updateUserStatus, arg.Status, arg.ID)
 	return err
 }

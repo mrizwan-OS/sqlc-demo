@@ -10,7 +10,6 @@ import (
 
 type Querier interface {
 	CreateComment(ctx context.Context, arg CreateCommentParams) error
-	// PostgreSQL queries with $1, $2 placeholders
 	CreateUser(ctx context.Context, arg CreateUserParams) error
 	DeleteComment(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) error
@@ -22,7 +21,6 @@ type Querier interface {
 	GetUserWithPosts(ctx context.Context, id int32) ([]GetUserWithPostsRow, error)
 	ListUsers(ctx context.Context) ([]User, error)
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
-	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

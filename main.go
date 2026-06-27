@@ -7,6 +7,7 @@ import (
 
     "sqlc-demo/db"
     "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/jackc/pgx/v5/pgconn"
 )
 
 func main() {
@@ -32,21 +33,37 @@ func main() {
     // Create queries
     queries := db.New(conn)
 
-    // 1. Create a user
-    err = queries.CreateUser(ctx, db.CreateUserParams{
-        Name:  "John Doe",
-        Email: "john@example.com",
-    })
+    // 1. Check if user exists, create if not
+    var userID int32 = 1
+    user, err := queries.GetUser(ctx, userID)
+    
     if err != nil {
-        log.Fatal("❌ Failed to create user:", err)
+        // User doesn't exist, create one
+        fmt.Println("📝 Creating new user...")
+        err = queries.CreateUser(ctx, db.CreateUserParams{
+            Name:  "John Doe",
+            Email: "john@example.com",
+        })
+        if err != nil {
+            // Check if it's a duplicate key error
+            if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+                fmt.Println("⚠️ User already exists, skipping creation")
+            } else {
+                log.Fatal("❌ Failed to create user:", err)
+            }
+        } else {
+            fmt.Println("✅ User created successfully")
+        }
+        
+        // Get the user again
+        user, err = queries.GetUser(ctx, userID)
+        if err != nil {
+            log.Fatal("❌ Failed to get user:", err)
+        }
+    } else {
+        fmt.Printf("👤 User already exists: %s\n", user.Name)
     }
-    fmt.Println("✅ User created successfully")
 
-    // 2. Get the user
-    user, err := queries.GetUser(ctx, 1)
-    if err != nil {
-        log.Fatal("❌ Failed to get user:", err)
-    }
     fmt.Printf("👤 User found: ID=%d, Name=%s, Email=%s\n", user.ID, user.Name, user.Email)
     
     // Format the timestamp
@@ -56,14 +73,21 @@ func main() {
     }
     fmt.Printf("   Created at: %s\n", createdStr)
 
-    // 3. Create sample posts
-    createSamplePosts(conn, user.ID)
-
-    // 4. Get user's posts
+    // 2. Create sample posts (check if posts exist first)
     posts, err := queries.GetUserPosts(ctx, user.ID)
     if err != nil {
-        log.Fatal("❌ Failed to get posts:", err)
+        log.Printf("⚠️ Failed to get posts: %v", err)
     }
+    
+    if len(posts) == 0 {
+        fmt.Println("📝 Creating sample posts...")
+        createSamplePosts(conn, user.ID)
+        posts, err = queries.GetUserPosts(ctx, user.ID)
+        if err != nil {
+            log.Fatal("❌ Failed to get posts:", err)
+        }
+    }
+
     fmt.Printf("📝 User has %d posts:\n", len(posts))
     for _, post := range posts {
         published := "no"
@@ -72,22 +96,29 @@ func main() {
         }
         fmt.Printf("   - %s (published: %s)\n", post.Title, published)
         
-        // Add a comment to each post
+        // Add a comment to each post if not exists
         if post.ID == 1 {
-            err = queries.CreateComment(ctx, db.CreateCommentParams{
-                PostID:  post.ID,
-                UserID:  user.ID,
-                Content: "Great post! Keep it up!",
-            })
+            comments, err := queries.GetPostComments(ctx, post.ID)
             if err != nil {
-                log.Printf("⚠️ Failed to add comment: %v", err)
-            } else {
-                fmt.Println("   💬 Added comment to post")
+                log.Printf("⚠️ Failed to get comments: %v", err)
+            }
+            
+            if len(comments) == 0 {
+                err = queries.CreateComment(ctx, db.CreateCommentParams{
+                    PostID:  post.ID,
+                    UserID:  user.ID,
+                    Content: "Great post! Keep it up!",
+                })
+                if err != nil {
+                    log.Printf("⚠️ Failed to add comment: %v", err)
+                } else {
+                    fmt.Println("   💬 Added comment to post")
+                }
             }
         }
     }
 
-    // 5. Get comments for first post
+    // 3. Get comments for first post
     comments, err := queries.GetPostComments(ctx, 1)
     if err != nil {
         log.Fatal("❌ Failed to get comments:", err)
