@@ -1,0 +1,3 @@
+# Goose configuration file
+driver: postgres
+dbstring: postgres://u0_a283@localhost:5432/mydb?sslmode=disable

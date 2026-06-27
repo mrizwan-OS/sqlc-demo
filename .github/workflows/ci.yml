@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        go-version: [1.21, 1.22]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mydb_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+      
+      - name: Install dependencies
+        run: |
+          go mod download
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+          go install github.com/pressly/goose/v3/cmd/goose@latest
+      
+      - name: Generate sqlc code
+        run: sqlc generate
+      
+      - name: Run migrations
+        run: |
+          export GOOSE_DRIVER=postgres
+          export GOOSE_DBSTRING="postgres://postgres:postgres@localhost:5432/mydb_test?sslmode=disable"
+          goose up
+      
+      - name: Run tests with coverage
+        run: go test -v -cover -coverprofile=coverage.out ./...
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.out
+      
+      - name: Run benchmarks
+        run: go test -bench=. -benchmem ./...
