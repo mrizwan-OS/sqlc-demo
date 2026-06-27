@@ -1,0 +1,52 @@
+# Binaries
+bin/
+*.exe
+*.log
+*.db
+*.sqlite
+
+# Test files
+*.test
+coverage.out
+coverage.html
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# Build artifacts
+app
+app-*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+nohup.out
+
+# Build scripts (keep only the essential ones)
+build.sh
+build-simple.sh
+udocker-*.sh
+Dockerfile
+
+# Application logs
+app.log
+test.db
+
+# Check config script
+check-config.sh
