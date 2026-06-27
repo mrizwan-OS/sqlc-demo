@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Keep Go modules (gomod) updated
+  - package-ecosystem: "gomod"
+    directory: "/" # Look for go.mod in the root directory
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Colombo"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "fix(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+    assignees:
+      - "mrizwan-OS" # Replace with your GitHub username
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Keep GitHub Actions workflows updated
+  - package-ecosystem: "github-actions"
+    directory: "/" # Looks in .github/workflows
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Colombo"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "ci"
+      - "github-actions"
+
+  # Keep Dockerfiles updated (if you have one)
+  - package-ecosystem: "docker"
+    directory: "/" # Looks for Dockerfile in the root
+    schedule:
+      interval: "monthly" # Docker images update less frequently
+    labels:
+      - "docker"
+      - "dependencies"
